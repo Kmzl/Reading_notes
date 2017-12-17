@@ -29,3 +29,26 @@ int main (int argc, char *argv[])
     return 0;
 }
 ```
+### 添加版本号和配置头文件
+我们将要添加的第一个特性是使我们的项目和可执行程序拥有一个版本号。尽管你可以通过修改代码来达到这个目标，但是让它在 CMakeLists.txt 文件中完成可以更加灵活。为了增加版本号，我们将要修改 CMakeLists.txt 文件，修改后的文件如下：
+```
+cmake_minimum_required (VERSION 2.6)
+project (Tutorial)
+# The version number.
+set (Tutorial_VERSION_MAJOR 1)
+set (Tutorial_VERSION_MINOR 0)
+
+# configure a header file to pass some of the CMake settings
+# to the source code
+configure_file (
+  "${PROJECT_SOURCE_DIR}/TutorialConfig.h.in"
+  "${PROJECT_BINARY_DIR}/TutorialConfig.h"
+  )
+
+# add the binary tree to the search path for include files
+# so that we will find TutorialConfig.h
+include_directories("${PROJECT_BINARY_DIR}")
+
+# add the executable
+add_executable(Tutorial tutorial.cxx)
+```
