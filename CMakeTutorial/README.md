@@ -114,3 +114,127 @@ int main (int argc, char *argv[])
 }
 ```
 **tutorial.cxx**文件的主要修改是包含了头文件**TutorialConfig.h**和在使用信息中输出了版本号。
+## 添加一个库（步骤2）
+我们将要添加一个库到我们的项目中。这个库将包含我们自己实现的计算平方根的函数。我们生成的可执行将使用这个库文件替代编译器生成的求标准平方根的函数。在这个教程中，我们将把这个库放在一个**MathFunctions**的子文件夹中，这个文件夹拥有一个只有一行的**CMakeLists.txt**文件：
+```
+add_library(MathFunctions mysqrt.cxx)
+```
+- add_library
+> Add a library to the project using the specified source files.
+```
+add_library(<name> [STATIC | SHARED | MODULE]
+            [EXCLUDE_FROM_ALL]
+            source1 [source2 ...])
+```
+源文件**mysqrt.cxx**拥有一个名叫**mysqrt**的函数，功能和编译器的**sqrt**函数功能相似。为了编译生成新的库文件，我们将在项目根目录下的**CMakeLists.txt**文件中添加`add_subdirectory`命令加入库项目所在的文件夹，以使在**CMake**中生成的**Makefile**文件中生成库编译步骤。为了得到**MathFunctions/MathFunctions.h**中的函数原型，我们用把**MathFunctions**添加到头文件搜索路径列表中。最后为可执行程序添加新的库。修改后的文件最后几行如下：
+```
+include_directories ("${PROJECT_SOURCE_DIR}/MathFunctions")
+add_subdirectory (MathFunctions)
+
+# add the executable
+add_executable (Tutorial tutorial.cxx)
+target_link_libraries (Tutorial MathFunctions)
+```
+- add_subdirectory
+> Add a subdirectory to the build.
+```
+add_subdirectory(source_dir [binary_dir]
+                [EXCLUDE_FROM_ALL])
+```
+- target_link_libraries
+> Link a target to given libraries.
+```
+target_link_libraries(<target> [item1 [item2 [...]]]
+                      [[debug|optimized|general] <item>] ...)
+```
+现在让我们把**MathFunctions**库设为可选项。虽然在这个教程中，这是没有必要的，但是当项目拥有大量库或者库文件是由第三方的代码提供的时候，这个选项可能会用的上。把库设为可选项的第一个步骤是添加一个**option**到根目录的**CMakeLists.txt**文件中。
+```
+# should we use our own math functions?
+option (USE_MYMATH
+        "Use tutorial provided math implementation" ON)
+```
+- option
+> Provides an option that the user can optionally select.
+```
+option(<option_variable> "help string describing option"
+      [initial value])
+```
+这将导致在**CMake GUI**中默认值为**ON**，用户可以根据需要改变它。这个设置将会被保存，于是用户不需要每次在在这个项目中运行**CMake**时进行设置。接下来，把**MathFunctions**库的编译和链接跟改为有条件控制，为了达到这个目的，我们在根目录的**CMakeLists.txt**文件的末尾进行如下修改：
+```
+# add the MathFunctions library?
+#
+if (USE_MYMATH)
+    include_directories ("${PROJECT_SOURCE_DIR}/MathFunctions")
+    add_subdirectory (MathFunctions)
+    set (EXTRA_LIBS ${EXTRA_LIBS} MathFunctions)
+endif (USE_MYMATH)
+
+# add the executable
+add_executable (Tutorial tutorial.cxx)
+target_link_libraries (Tutorial  ${EXTRA_LIBS})
+```
+- if
+> Conditionally execute a group of commands.
+```
+if(expression)
+  # then section.
+  COMMAND1(ARGS ...)
+  COMMAND2(ARGS ...)
+  ...
+elseif(expression2)
+  # elseif section.
+  COMMAND1(ARGS ...)
+  COMMAND2(ARGS ...)
+  ...
+else(expression)
+  # else section.
+  COMMAND1(ARGS ...)
+  COMMAND2(ARGS ...)
+  ...
+endif(expression)
+```
+- set
+> Set a CMake, cache or environment variable to a given value.
+```
+set(<variable> <value>
+    [[CACHE <type> <docstring> [FORCE]] | PARENT_SCOPE])
+```
+这通过使用设置`USE_MYMATH`变量来控制是否编译和使用`MathFunctions`函数。需要注意的是，我们在这个例子中使用了一个变量`EXTRA_LIBS`来收集可选的库，以在之后链接可执行程序时使用。这是一个使拥有大量可选组件的项目变得清晰的方法。可以相当直接的修改代码，得到如下内容：
+```
+// A simple program that computes the square root of a number
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "TutorialConfig.h"
+#ifdef USE_MYMATH
+#include "MathFunctions.h"
+#endif
+
+int main (int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        fprintf(stdout,"%s Version %d.%d\n", argv[0],
+                Tutorial_VERSION_MAJOR,
+                Tutorial_VERSION_MINOR);
+        fprintf(stdout,"Usage: %s number\n",argv[0]);
+        return 1;
+    }
+
+    double inputValue = atof(argv[1]);
+
+#ifdef USE_MYMATH
+    double outputValue = mysqrt(inputValue);
+#else
+    double outputValue = sqrt(inputValue);
+#endif
+
+    fprintf(stdout,"The square root of %g is %g\n",
+              inputValue, outputValue);
+    return 0;
+}
+```
+在源代码中我们可以很好的使用宏`USE_MYMATH`，这通过我们在**TutorialConfig.h.in**文件中增加一行新的内容，然后通过**CMake**配置得到。
+```
+#cmakedefine USE_MYMATH
+```
