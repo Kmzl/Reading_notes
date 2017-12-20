@@ -1,5 +1,4 @@
-[TOC]
-[cmake-tutorial](https://cmake.org/cmake-tutorial/)
+[cmake-tutorial 官方地址](https://cmake.org/cmake-tutorial/)
 # CMake Tutorial
 ## 一个简单的开始(步骤1)
 大多数简单项目是有源文件所编译。对于例子，CMakeLists.txt 文件仅仅需要两行，这将开始我们的教程。CMakeList.txt 文件如下：
@@ -238,3 +237,48 @@ int main (int argc, char *argv[])
 ```
 #cmakedefine USE_MYMATH
 ```
+
+## 安装和测试（步骤3）
+接下来，我们将在项目中添加安装规则和测试支持。安装规则非常简单，对于**MathFunctions**库，我们将在**MathFunctions**目录下的**CMakeLists.txt**文件中添加两行代码进行库文件和头文件的安装。
+```
+install (TARGETS MathFunctions DESTINATION bin)
+install (FILES MathFunctions.h DESTINATION include)
+```
+接下来，我们将在根目录的**CMakeLists.txt**文件中增加代码以使可执行程序和配置生成的头文件完成安装。
+```
+# add the install targets
+install (TARGETS Tutorial DESTINATION bin)
+install (FILES "${PROJECT_BINARY_DIR}/TutorialConfig.h" DESTINATION include)
+```
+这就是全部，至此，你可以键入`make install`或者从你的**IDE**进行构建，这将安装相应的头文件、库和可执行程序。**CMake**的变量**CMAKE_INSTALL_PREFIX**用来决定安装路径的根目录。添加测试也是一个相当直接的过程。在根目录的**CMakeLists.txt**文件的末尾我们可以添加一些基本测试来验证程序是否正常工作。
+```
+include(CTest)
+
+# does the application run
+add_test (TutorialRuns Tutorial 25)
+# does it sqrt of 25
+add_test (TutorialComp25 Tutorial 25)
+set_tests_properties (TutorialComp25 PROPERTIES PASS_REGULAR_EXPRESSION "25 is 5")
+# does it handle negative numbers
+add_test (TutorialNegative Tutorial -25)
+set_tests_properties (TutorialNegative PROPERTIES PASS_REGULAR_EXPRESSION "-25 is 0")
+# does it handle small numbers
+add_test (TutorialSmall Tutorial 0.0001)
+set_tests_properties (TutorialSmall PROPERTIES PASS_REGULAR_EXPRESSION "0.0001 is 0.01")
+# does the usage message work?
+add_test (TutorialUsage Tutorial)
+set_tests_properties (TutorialUsage PROPERTIES PASS_REGULAR_EXPRESSION "Usage:.*number")
+```
+构建程序后，我们可以执行**ctest**命令来执行测试。第一个测试用来简单判断程序运行过程中是否存在**segfault**或者其他**crash**情况，程序是否正常返回0。这是**CTest**的基本样子。接下来几个测试全使用**PASS_REGULAR_EXPRESSION**来判断测试中的程序输出内容中是否包含执行的字符串。这种情况下，需要验证计算平方根的结构是否正确，和当提供无效的数字时是否输出**usage**信息。如果你想要测试不同的输入参数，你需要像下方的代码中创建宏。
+```
+#define a macro to simplify adding tests, then use it
+macro (do_test arg result)
+  add_test (TutorialComp${arg} Tutorial ${arg})
+  set_tests_properties (TutorialComp${arg} PROPERTIES PASS_REGULAR_EXPRESSION ${result})
+endmacro (do_test)
+
+# do a bunch of result based tests
+do_test (25 "25 is 5")
+do_test (-25 "-25 is 0")
+```
+对于每次调用`do_test`，项目通过传入的名字、输入、和输出参数添加一个测试。
