@@ -10,6 +10,9 @@ double mysqrt(double x)
     double result;
     double delta;
     result = x;
+#if defined (HAVE_LOG) && defined (HAVE_EXP)
+    result = exp(log(x)*0.5);
+#else //otherwise use an iterative approach
     int i = 0;
     for (i = 0; i < 10; i++)
     {
@@ -20,5 +23,6 @@ double mysqrt(double x)
         delta = x - (result * result);
         result = result + 0.5 * delta / result;
     }
+#endif
     return result;
 }
