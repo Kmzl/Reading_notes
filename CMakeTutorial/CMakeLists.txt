@@ -78,3 +78,6 @@ set (CPACK_RESOURCE_FILE_LICENSE
 set (CPACK_PACKAGE_VERSION_MAJOR "${Tutorial_VERSION_MAJOR}")
 set (CPACK_PACKAGE_VERSION_MINOR "${Tutorial_VERSION_MINOR}")
 include (CPack)
+
+include (CTest)
+set (CTEST_PROJECT_NAME "Tutorial")
