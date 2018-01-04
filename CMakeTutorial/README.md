@@ -471,3 +471,23 @@ add_library(MathFunctions mysqrt.cxx ${CMAKE_CURRENT_BINARY_DIR}/Table.h)
 install (TARGETS MathFunctions DESTINATION bin)
 install (FILES MathFunctions.h DESTINATION include)
 ```
+
+## 构建一个安装程序（步骤6）
+接下来我们打算发布我们的程序给别人使用。我们希望完成程序和源代码在不同平台的分发。这和我们在步骤3使用 **install** 指令进行的安装和测试有一些不同，步骤3我们必须编译我们需要安装的程序。在这个例子中，我们将要根据 **cygwin**, **debian**, **RPMs** 等不同的包管理特性来构建我们的安装程序来提供可执行程序。我们将在这个正解中描述如何使用 **CPack** 来创建分别对于个平台的安装程序。我了达到这目的，我们将在根目录的 **CMakeLists.txt** 文件的底下增加几行。
+```
+# build a CPack driven installer package
+include (InstallRequiredSystemLibraries)
+set (CPACK_RESOURCE_FILE_LICENSE
+        "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+set (CPACK_PACKAGE_VERSION_MAJOR "${Tutorial_VERSION_MAJOR}")
+set (CPACK_PACKAGE_VERSION_MINOR "${Tutorial_VERSION_MINOR}")
+include (CPack)
+```
+这就是所有需要的代码。我们首先包含 **InstallRequiresSystemLibraries**。这个模块将会包含所有我们的项目在各个平台下需要的动态库。接下来我们设置一些 **CPack** 变量用来加载我们项目的证书和版本号。最后，我们包含 **CPack** 模块，这个模块在运行安装程序时使用变量和其他需要的系统资源。接下来的步骤，我们呢以通常的方式构建项目，并执行 **CPack**。为了构建一个二进制发布版本，你需要执行：
+```
+cpack --config CPackConfig.cmake
+```
+为了发布一个源代码版本，你需要执行：
+```
+cpack --config CPackSourceConfig.cmake
+```
